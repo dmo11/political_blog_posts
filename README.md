@@ -29,4 +29,15 @@ The first script sources the second and implements Gibbs sampling from the Marke
     - phi_kv: topic word probabilities. 
     - r_k: stopping parameter for NB distribution on document topic counts.
     - p_k: success probability parameter for NB distribution on document topic counts.
-The third script implements 
+The third script uses Jonathan Chang's R package lda https://cran.r-project.org/web/packages/lda/lda.pdf which implements Gibbs sampling from the relational topic model of http://proceedings.mlr.press/v5/chang09a/chang09a.pdf. 
+  - Inputs: 
+  - Outputs: 
+The fourth script implements Gibbs sampling from Derek Owens-Oas's topic link block model, a novel Bayesian probabilistic model for learning topics and finding communities in documents with links. 
+  - Inputs: textNetwork.csv file with cleaned blog posts.
+  - Outputs: posterior samples of:
+    - b_n: block assignment for observation n.
+    - z_wn: topic assignment for word w of observation n.
+    - phi_vk: probability for token v in topic k.
+    - pi_bl: link l proportion for block b.
+    - theta_bk: topic k proportion for block b.
+
