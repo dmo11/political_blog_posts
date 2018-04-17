@@ -1,5 +1,5 @@
 ---
-title: "Link Block LDA Results"
+title: "Applying Link Block LDA to Political Blog Posts"
 author: "Derek Owens-Oas"
 date: "March 31, 2018"
 output: pdf_document
@@ -19,11 +19,11 @@ Model parameters are estimated using Bayesian inference. I used Gibbs sampling t
 
 ## Political blog posts:
 
-I apply the method to text from political blog posts from January, 2012. Each document's node is the blog website and the links are hyperlinks to other blogs.
+I apply the method to text from 9430 political blog posts from January, 2012. Each document's node is the blog website and the links are hyperlinks to other blogs.
 
 ## Learned Topics in the corpus:
 
-In this section I present a selection of the topics learned. I specify words of interest and the model chooses the topic which assigns those words the highest probability. Then the highest scoring words of each topic are shown. Scores are from the lda R package.
+In this section I present a selection of the topics learned. Following parameter estimation, which is unsupervised, I specify words of interest and choose the topic which assigns those words the highest probability. Then the highest scoring words of each topic are shown. Scores are from the lda R package.
 
 ```{r include=FALSE}
 # Set current directory to this folder:
@@ -54,6 +54,8 @@ topWords = presentTopWords(phi_vk_post_mean, 10)
 selectedTopWords = presentTopWords(phi_vk_post_mean, 10, topicNames)
 knitr::kable(selectedTopWords)
 ```
+
+The learned topics can be identified as relating to the economy, health, and education. These are recognizable political topics. Also discovered is a topic emphasizing the election and campaign, which is underway in January 2012.
 
 ## Network Visualization:
 
@@ -115,10 +117,13 @@ blocksToView = election_blocks
 # showing when nodes are active, when they link to each other, 
 # what they post about and what community they are in:
 visualize_blog_network(textNetwork, document_block_assignments, timesToView, nodesToView, blocksToView, network_topic, FALSE)
-  
+```
 
+Here I find that \texttt{crooksandliars} posts and links the most about the election. \texttt{tpmmuckraker} is linked a lot about the election. Other blogs which post, link, or are linked about the election are identifiable from the plot.
 
+```{r include=FALSE}
 # Create another visualization with color by blocks:
+textNet=textNetwork
 #C=ceiling(B/3)
 #mmsb_k_means = kmeans(t(block_node_expectations), centers = C)$cluster
 
@@ -156,6 +161,18 @@ for (i in 1:dim(block_node_expects)[1]){
   block_node_expects[i, columns_to_add_to] = block_node_expects[i, columns_to_add_to] + as.numeric(table(c(domains[block_post_indices], unlist(links[block_post_indices]))))
 }
 
+# For each document find the most representative word:
+v_wn = str_split(textNet$words, " ")
+z_vd = lapply(unodes, function(d) return(sort(table(unlist(v_wn[which(domains==d)])),decreasing=TRUE)))
+# link word counts:
+# word specific inverse domain frequency:
+idomf_v = sort(sqrt(length(unodes)/(1+table(unlist(lapply(z_vd, function(d) return(names(d))))))),decreasing=TRUE)
+# tfirf:
+tfidomf_vd = lapply(z_vd,function(d) return(sort(d*idomf_v[names(d)],decreasing=TRUE)))
+# domain labels:
+dom_lab = unlist(lapply(tfidomf_vd, function(d) return(paste(names(d[1:2]),collapse=" "))))
+names(dom_lab)=unodes
+
 mmsb_k_means = apply(block_node_expects, 2, which.max)
 names(mmsb_k_means) = dimnames(weighted_adjacency_matrix)[[1]]
 node_perm_mmsb = sort(mmsb_k_means,index.return=TRUE)$ix
@@ -172,17 +189,7 @@ rad_pos_dumb = ifelse(deg_pos*2*pi/360 < pi, -deg_pos*2*pi/360,8*pi/4-deg_pos*2*
 #plot.igraph(g_mmsb,layout=g_mmsb_layout,edge.arrow.size=.05, edge.width=.5*log(E(g_mmsb)$weight),vertex.size=3, edge.color=E(g_mmsb)$color,
 #            vertex.label.color = "black", vertex.label.cex=1, xlim = c(-1.08, 1.08), ylim = c(-1.23, 1.23),rescale=TRUE,asp=9/16, margin=-.1,vertex.label.dist=1.7, vertex.label.degree=rad_pos_dumb, vertex.label=V(g_mmsb)$label) # 
 
-# For each document find the most representative word:
-v_wn = str_split(textNet$words, " ")
-z_vd = lapply(unodes, function(d) return(sort(table(unlist(v_wn[which(domains==d)])),decreasing=TRUE)))
-# link word counts:
-# word specific inverse domain frequency:
-idomf_v = sort(sqrt(length(unodes)/(1+table(unlist(lapply(z_vd, function(d) return(names(d))))))),decreasing=TRUE)
-# tfirf:
-tfidomf_vd = lapply(z_vd,function(d) return(sort(d*idomf_v[names(d)],decreasing=TRUE)))
-# domain labels:
-dom_lab = unlist(lapply(tfidomf_vd, function(d) return(paste(names(d[1:2]),collapse=" "))))
-names(dom_lab)=unodes
+
 
 plot.igraph(g_mmsb,layout=g_mmsb_layout,edge.arrow.size=.05, edge.width=.5*log(E(g_mmsb)$weight),vertex.size=3, edge.color=E(g_mmsb)$color,
             vertex.label.color = "black", vertex.label.cex=2, xlim = c(-1.00, 1.00), ylim = c(-1.5, 1.5),rescale=TRUE,asp=9/16, margin=-.05, vertex.label="") # 
@@ -196,5 +203,5 @@ angle = ifelse(atan(-(la[,1]/la[,2]))*(180/pi) < 0,  90 + atan(-(la[,1]/la[,2]))
 for (i in 1:length(x)) {
   text(x=x[i], y=y[i], labels=V(g_mmsb)$label[i], adj=NULL, pos=NULL, cex=1, col="black", srt=angle[i], xpd=T)
 }
-
 ```
+
